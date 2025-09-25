@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Cuadrantes Dinámico (Final)</title>
+    <style>
+        /* --- ESTILOS BASE Y LAYOUT --- */
+        :root {
+            /* Modo Claro */
+            --bg-color: #f0f4f8;
+            --container-bg: white;
+            --panel-bg: #e6f7ff;
+            --panel-border: #b3e5fc;
+            --sub-panel-bg: #f5fcff;
+            --primary-color: #0077b6;
+            --text-color: #333;
+            --sub-text-color: #666;
+            --border-color: #ccc;
+            --table-header-bg: #34495e;
+            --table-header-text: white;
+            --notification-info-bg: #cce5ff;
+            --notification-info-text: #004085;
+            --shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+            --group-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- ESTILOS MODO OSCURO --- */
+        body.dark-mode {
+            --bg-color: #1e1e2e;
+            --container-bg: #292a3c;
+            --panel-bg: #32354a;
+            --panel-border: #4d4f68;
+            --sub-panel-bg: #3b3e52;
+            --primary-color: #6ed3cf;
+            /* Cian claro */
+            --text-color: #f0f0f0;
+            --sub-text-color: #b0b0b0;
+            --border-color: #4d4f68;
+            --table-header-bg: #1e2029;
+            --table-header-text: #6ed3cf;
+            --notification-info-bg: #4d4f68;
+            --notification-info-text: #9fe2d7;
+            --shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+            --group-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            padding: 20px;
+            color: var(--text-color);
+            transition: background-color 0.4s, color 0.4s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            transition: background 0.4s, box-shadow 0.4s;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Layout Principal */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--panel-border);
+            margin-bottom: 10px;
+            transition: background-color 0.4s, border-color 0.4s;
+        }
+
+        /* Sub-paneles internos */
+        .sub-panel {
+            background-color: var(--sub-panel-bg);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid var(--panel-border);
+            transition: background-color 0.4s, border-color 0.4s;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .flex-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Controles específicos */
+        label {
+            font-weight: 600;
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        select,
+        textarea {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            font-size: 0.9em;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            transition: background-color 0.4s, color 0.4s, border-color 0.4s;
+        }
+
+        input[type="date"] {
+            flex-grow: 1;
+        }
+
+        /* Administración de Grupos y Restricciones */
+        .group-card {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: var(--group-card-shadow);
+            background-color: var(--container-bg);
+            transition: background-color 0.4s, box-shadow 0.4s;
+        }
+
+        .group-card textarea {
+            width: 95%;
+            height: 60px;
+            margin-top: 5px;
+            padding: 5px;
+            border-radius: 3px;
+            resize: vertical;
+        }
+
+        .group-list,
+        .restriction-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Botones */
+        button {
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s, color 0.3s;
+            margin-left: 5px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #005f93;
+        }
+
+        .btn-secondary {
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--panel-bg);
+            border-color: var(--primary-color);
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            margin-left: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        /* Estilos de Slots/Columnas (Vertical) */
+        #slot-headers-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        #slot-headers-container input[type="text"] {
+            width: 100%;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        /* Contenedor de Disponibilidad con scroll horizontal (SOLUCIÓN) */
+        #disponibilidad-table-container {
+            max-height: 200px;
+            overflow-y: auto;
+            overflow-x: auto;
+            margin-bottom: 10px;
+            /* Asegura que ocupe todo el ancho del sub-panel */
+            width: 100%;
+        }
+
+        #disponibilidad-table {
+            width: max-content;
+            /* Permite que crezca según el contenido */
+            min-width: 100%;
+            /* Asegura que al menos ocupe el ancho del contenedor cuando hay pocas columnas */
+            border-collapse: collapse;
+        }
+
+        /* Contenedor de Resultados con scroll horizontal (SOLUCIÓN) */
+        #cuadrante-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            margin-bottom: 20px;
+            /* Asegura que ocupe todo el ancho del contenedor principal */
+            width: 100%;
+        }
+
+        #cuadrante-table-container table {
+            width: max-content;
+            /* Permite que la tabla se extienda */
+            min-width: 100%;
+            /* Asegura que al menos ocupe el ancho del contenedor */
+            border-collapse: collapse;
+        }
+
+        /* Estilos de la Tabla Base */
+        th,
+        td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+            background-color: var(--container-bg);
+            transition: background-color 0.4s, border-color 0.4s;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--table-header-text);
+        }
+
+        /* Colores de Grupo (Mantenidos para compatibilidad con el código anterior que NO usa colores) */
+        .group-hombres_cell_colored {
+            background-color: var(--color-hombres, #e3f2fd) !important;
+        }
+
+        .group-mujeres_cell_colored {
+            background-color: var(--color-mujeres, #fff3e0) !important;
+        }
+
+        .group-other_cell_colored {
+            background-color: var(--color-other, #e8f5e9) !important;
+        }
+
+        .empty_cell_colored {
+            background-color: var(--color-empty, #f7f7f7) !important;
+        }
+
+        body.dark-mode {
+            --color-hombres: #404666;
+            --color-mujeres: #664f40;
+            --color-other: #406646;
+            --color-empty: #32354a;
+        }
+
+        body:not(.dark-mode) {
+            --color-hombres: #e3f2fd;
+            --color-mujeres: #fff3e0;
+            --color-other: #e8f5e9;
+            --color-empty: #f7f7f7;
+        }
+
+        .conflict_cell_colored {
+            background-color: #ffcccc !important;
+            font-weight: bold;
+            color: #cc0000;
+        }
+
+        /* Notificaciones */
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background-color: var(--notification-info-bg);
+            color: var(--notification-info-text);
+            border: 1px solid var(--panel-border);
+        }
+
+        /* MODO OSCURO TOGGLE */
+        .theme-toggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+            margin: 0 10px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+
+        body.dark-mode .slider {
+            background-color: #555;
+        }
+
+        body.dark-mode input:checked+.slider {
+            background-color: var(--primary-color);
+        }
+
+        body.dark-mode .slider:before {
+            background-color: var(--container-bg);
+        }
+
+        /* Lista de Presets */
+        #presets-list {
+            margin-top: 10px;
+            padding: 0;
+            list-style: none;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        #presets-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px dotted var(--border-color);
+            transition: border-color 0.4s;
+        }
+
+        #presets-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-toggle">
+        <span style="font-weight: 600; font-size: 0.9em; color: var(--text-color);">Modo Oscuro</span>
+        <label class="switch">
+            <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="container">
+        <h1>Generador de Cuadrantes Dinámico</h1>
+
+        <div id="notification-box" class="info"></div>
+
+        <div class="main-grid">
+
+            <div class="panel">
+
+                <div class="sub-panel">
+                    <h2>⏱️ Secuencia de Tiempo</h2>
+                    <div class="flex-row">
+                        <label for="semanas">Total de Filas:</label>
+                        <input type="number" id="semanas" value="12" min="1" style="width: 60px;">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label for="start-date" style="display: block; margin-bottom: 5px;">Fecha de Inicio:</label>
+                        <input type="date" id="start-date" value="2025-01-01">
+                    </div>
+                    <div class="flex-row">
+                        <label for="frequency">Frecuencia (Salto en días):</label>
+                        <input type="number" id="frequency" value="7" min="1" style="width: 60px;">
+                    </div>
+                </div>
+
+                <div class="sub-panel">
+                    <h2>⚙️ Slots/Columnas</h2>
+                    <div class="flex-row">
+                        <label for="slots">Número de Slots:</label>
+                        <input type="number" id="slots" value="3" min="1" style="width: 60px;"
+                            onchange="loadDisponibilidad()">
+                    </div>
+                    <div id="slot-headers-container">
+                    </div>
+                </div>
+
+                <div class="sub-panel" style="margin-bottom: 0;">
+                    <h2>🛑 Restricciones Personalizadas</h2>
+                    <div id="restriction-list" class="restriction-list"></div>
+                    <div class="flex-row" style="margin-top: 15px;">
+                        <select id="res-p1" style="flex-grow: 1;"></select>
+                        <select id="res-p2" style="flex-grow: 1;"></select>
+                        <button class="btn-secondary btn-small" onclick="addRestriction()">Añadir</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="grid-column: 2 / span 1;">
+
+                <div class="sub-panel">
+                    <h2>👥 Grupos y Miembros</h2>
+                    <p style="font-size: 0.9em; color: var(--sub-text-color); margin-top: -10px;">Define los grupos y
+                        sus miembros.</p>
+                    <div id="group-list" class="group-list" style="max-height: 250px; overflow-y: auto;"
+                        onchange="loadDisponibilidad()"></div>
+                    <div class="flex-row" style="margin-top: 15px;">
+                        <input type="text" id="new-group-name" placeholder="Nombre del nuevo grupo">
+                        <button class="btn-secondary btn-small" onclick="addGroup()">+ Añadir Grupo</button>
+                    </div>
+                </div>
+
+                <div class="sub-panel" style="margin-bottom: 0;">
+                    <h2>💾 Gestión de Configuraciones</h2>
+                    <p style="font-size: 0.9em; margin-top: -10px; color: var(--sub-text-color);">Presets Locales y
+                        Archivos</p>
+                    <div class="flex-row" style="margin-bottom: 5px;">
+                        <input type="text" id="preset-name-input" placeholder="Nombre para guardar preset"
+                            style="flex-grow: 1;">
+                        <button class="btn-primary" onclick="saveConfiguration()">Guardar Preset</button>
+                    </div>
+
+                    <ul id="presets-list">
+                    </ul>
+
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="downloadConfiguration()">⬇️ Descargar Archivo
+                            (.json)</button>
+                        <input type="file" id="upload-file" accept=".json" style="display: none;"
+                            onchange="uploadConfiguration(event)">
+                        <button class="btn-secondary" onclick="document.getElementById('upload-file').click()">⬆️ Cargar
+                            Archivo (.json)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+
+                <div class="sub-panel">
+                    <h2>📅 Disponibilidad por Grupo</h2>
+                    <p style="font-size:0.9em; margin-top: -10px; color: var(--sub-text-color);">Marca los slots a los
+                        que cada **grupo** puede asistir.</p>
+                    <div id="disponibilidad-table-container">
+                        <table id="disponibilidad-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; justify-content: flex-start;">
+                        <button class="btn-secondary btn-small" onclick="checkAllSlots()">Marcar Todo</button>
+                    </div>
+                </div>
+
+                <div class="sub-panel" style="margin-bottom: 0;">
+                    <h2>📊 Opciones de Generación</h2>
+                    <div style="margin-bottom: 10px;">
+                        <label for="priority-mode">Prioridad de Asignación:</label>
+                        <select id="priority-mode" style="width: 100%; margin-top: 5px;">
+                            <option value="frecuencia">Priorizar Distribución Frecuente</option>
+                            <option value="pareja">Priorizar Diversidad de Parejas</option>
+                        </select>
+                    </div>
+                    <div
+                        style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <label for="same-group-only">Solo Personas del Mismo Grupo Juntas</label>
+                        <input type="checkbox" id="same-group-only">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <button class="btn-primary" style="width: 100%; font-size: 1.2em;" onclick="generarCuadrante()">🚀 Generar
+            Cuadrante Final</button>
+
+
+        <div id="resultados">
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. DATOS INICIALES Y ESTRUCTURAS ---
+        const LOCAL_STORAGE_KEY = 'cuadrante_presets';
+        let GRUPOS_DATA = [
+            { id: 'hombres', name: 'Hombres', members: "Javier, José Miguel, Misael, Antonio, Jetro, Mario", colorClass: 'group-hombres' },
+            { id: 'mujeres', name: 'Mujeres', members: "Antonia, Fe, Lucía, Ana Mari, M.J. Pruaño, M.J. Vega, Meli, Mercedes, Neysa", colorClass: 'group-mujeres' }
+        ];
+        let RESTRICCIONES_DATA = [
+            { p1: "Mario", p2: "Misael" }
+        ];
+        let SLOT_HEADERS = ["Visitador", "Acompañante 1", "Acompañante 2"];
+
+        let PARTICIPANTES = [];
+        let PARTICIPANTES_MAP = new Map();
+        let disponibilidadGrupoMap = new Map();
+
+        let contadorVisitas = new Map();
+        let ultimaVisita = new Map();
+        let ultimaPareja = new Map();
+        let grupoVisitas = new Map();
+        let semanaActual = 0;
+        let ULTIMO_CUADRANTE_GENERADO = [];
+
+        const inicializarDatos = () => {
+            PARTICIPANTES = [];
+            contadorVisitas.clear();
+            ultimaVisita.clear();
+            ultimaPareja.clear();
+            grupoVisitas.clear();
+            semanaActual = 0;
+
+            GRUPOS_DATA.forEach(group => {
+                const members = group.members.split(',').map(m => m.trim()).filter(m => m.length > 0);
+                group.id = group.name.toLowerCase().replace(/\s/g, '_').replace(/[^a-z0-9_]/g, '');
+                group.colorClass = `group-${group.id}`;
+
+                grupoVisitas.set(group.id, { count: 0, members: members.length });
+                members.forEach(p => {
+                    if (!PARTICIPANTES.includes(p)) {
+                        PARTICIPANTES.push(p);
+                        PARTICIPANTES_MAP.set(p, { groupId: group.id, colorClass: group.colorClass });
+                        contadorVisitas.set(p, 0);
+                        ultimaVisita.set(p, -1);
+                        ultimaPareja.set(p, null);
+                    }
+                });
+            });
+        };
+
+        const getActiveParticipants = () => {
+            inicializarDatos();
+            return PARTICIPANTES;
+        };
+
+        // --- 2. GESTIÓN DE INTERFAZ (DOM) y MODO OSCURO ---
+
+        function toggleDarkMode() {
+            const isDarkMode = document.getElementById('dark-mode-toggle').checked;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('dark-mode', isDarkMode);
+        }
+
+        /** Muestra un mensaje en el recuadro de notificaciones. */
+        function showNotification(message, type = 'info') {
+            const box = document.getElementById('notification-box');
+            box.innerHTML = message;
+            box.className = '';
+            box.classList.add(type);
+            box.style.display = 'block';
+
+            clearTimeout(box.timeoutId);
+            box.timeoutId = setTimeout(() => {
+                box.style.display = 'none';
+            }, 5000);
+        }
+
+        function renderSlotHeaders() {
+            const container = document.getElementById('slot-headers-container');
+            const slots = parseInt(document.getElementById('slots').value);
+            container.innerHTML = '';
+
+            while (SLOT_HEADERS.length < slots) {
+                SLOT_HEADERS.push(`Slot ${SLOT_HEADERS.length + 1}`);
+            }
+            SLOT_HEADERS = SLOT_HEADERS.slice(0, slots);
+
+            // Se apila en vertical
+            SLOT_HEADERS.forEach((header, index) => {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = header;
+                input.placeholder = `Slot ${index + 1}`;
+                input.onchange = (e) => {
+                    SLOT_HEADERS[index] = e.target.value;
+                    loadDisponibilidad();
+                };
+                container.appendChild(input);
+            });
+        }
+
+        function loadDisponibilidad() {
+            const slots = parseInt(document.getElementById('slots').value);
+            const table = document.getElementById('disponibilidad-table');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+
+            if (isNaN(slots) || slots < 1) return;
+
+            renderSlotHeaders();
+
+            // 1. Construir Encabezado (Quitando la fila extra de "Slots")
+            thead.innerHTML = '';
+
+            // Fila de encabezado simplificada: solo Grupo y los nombres de los slots
+            let headerHTML = '<tr><th>Grupo</th>';
+            headerHTML += SLOT_HEADERS.map(name => `<th>${name}</th>`).join('');
+            headerHTML += '</tr>';
+            thead.innerHTML = headerHTML;
+
+            // 2. Construir Cuerpo (Grupos y Checkboxes)
+            let bodyHTML = '';
+            GRUPOS_DATA.forEach(group => {
+                const groupId = group.id;
+                bodyHTML += `<tr><td style="font-weight: bold;">${group.name}</td>`;
+                // Inicializar o cargar disponibilidad
+                const currentDisp = disponibilidadGrupoMap.get(groupId);
+                // Si no hay mapa, se asume que todos están chequeados (true)
+                const isCheckedFunc = (slot) => currentDisp ? currentDisp.has(slot) : true;
+
+                for (let i = 1; i <= slots; i++) {
+                    const isChecked = isCheckedFunc(i);
+                    bodyHTML += `
+                        <td>
+                            <input type="checkbox" class="disp-check" 
+                                onchange="toggleDisponibilidadGrupo('${groupId}', ${i}, this.checked)" ${isChecked ? 'checked' : ''}>
+                        </td>
+                    `;
+                }
+                bodyHTML += '</tr>';
+            });
+            tbody.innerHTML = bodyHTML;
+
+            updateRestrictionSelects();
+        }
+
+        function toggleDisponibilidadGrupo(groupId, slot, isChecked) {
+            if (!disponibilidadGrupoMap.has(groupId)) {
+                const slots = parseInt(document.getElementById('slots').value);
+                const initialSet = new Set();
+                for (let i = 1; i <= slots; i++) { initialSet.add(i); }
+                disponibilidadGrupoMap.set(groupId, initialSet);
+            }
+
+            if (isChecked) {
+                disponibilidadGrupoMap.get(groupId).add(slot);
+            } else {
+                disponibilidadGrupoMap.get(groupId).delete(slot);
+            }
+        }
+
+        function checkAllSlots() {
+            const slots = parseInt(document.getElementById('slots').value);
+            GRUPOS_DATA.forEach(group => {
+                const availableSlots = new Set();
+                for (let i = 1; i <= slots; i++) { availableSlots.add(i); }
+                disponibilidadGrupoMap.set(group.id, availableSlots);
+            });
+            loadDisponibilidad();
+            showNotification('Disponibilidad marcada para todos los grupos en todos los slots.', 'info');
+        }
+
+        function renderGroups() {
+            const listDiv = document.getElementById('group-list');
+            listDiv.innerHTML = '';
+
+            GRUPOS_DATA.forEach((group) => {
+                group.id = group.name.toLowerCase().replace(/\s/g, '_').replace(/[^a-z0-9_]/g, '');
+                group.colorClass = `group-${group.id}`;
+
+                const card = document.createElement('div');
+                card.className = `group-card ${group.colorClass}`;
+                const safeName = group.name.replace(/"/g, '&quot;');
+
+                card.innerHTML = `
+                    <div class="flex-row" style="justify-content:space-between;">
+                        <input type="text" value="${safeName}" onchange="renameGroup('${group.id}', this.value)" style="font-weight:bold; border:none; background:transparent;">
+                        <button class="btn-danger btn-small" style="margin-left:auto;" onclick="removeGroup('${group.id}')">Eliminar</button>
+                    </div>
+                    <label style="font-size: 0.9em; display:block; margin-top: 5px; color: var(--sub-text-color);">Miembros (coma):</label>
+                    <textarea onchange="updateGroupMembers('${group.id}', this.value)">${group.members}</textarea>
+                `;
+                listDiv.appendChild(card);
+            });
+            updateRestrictionSelects();
+        }
+
+        function renameGroup(oldId, newName) {
+            const group = GRUPOS_DATA.find(g => g.id === oldId);
+            if (group) {
+                group.name = newName.trim();
+                const newId = newName.toLowerCase().replace(/\s/g, '_').replace(/[^a-z0-9_]/g, '');
+                group.id = newId;
+                group.colorClass = `group-${newId}`;
+                renderGroups();
+                loadDisponibilidad();
+            }
+        }
+
+        function updateGroupMembers(id, membersString) {
+            const group = GRUPOS_DATA.find(g => g.id === id);
+            if (group) {
+                group.members = membersString;
+                getActiveParticipants();
+                updateRestrictionSelects();
+            }
+        }
+
+        function addGroup() {
+            const newNameInput = document.getElementById('new-group-name');
+            const name = newNameInput.value.trim() || `Grupo ${GRUPOS_DATA.length + 1}`;
+            newNameInput.value = '';
+
+            const newId = name.toLowerCase().replace(/\s/g, '_').replace(/[^a-z0-9_]/g, '');
+            GRUPOS_DATA.push({
+                id: newId,
+                name: name,
+                members: '',
+                colorClass: `group-${newId}`
+            });
+            renderGroups();
+            loadDisponibilidad();
+            showNotification(`Grupo "${name}" añadido.`, 'success');
+        }
+
+        function removeGroup(id) {
+            if (GRUPOS_DATA.length <= 1) {
+                showNotification("Debe haber al menos un grupo.", 'error');
+                return;
+            }
+            const groupName = GRUPOS_DATA.find(g => g.id === id)?.name;
+            GRUPOS_DATA = GRUPOS_DATA.filter(g => g.id !== id);
+            disponibilidadGrupoMap.delete(id);
+            renderGroups();
+            loadDisponibilidad();
+            showNotification(`Grupo "${groupName}" eliminado.`, 'info');
+        }
+
+        function updateRestrictionSelects() {
+            getActiveParticipants();
+            const selects = [document.getElementById('res-p1'), document.getElementById('res-p2')];
+
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">(Seleccionar)</option>';
+                PARTICIPANTES.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p;
+                    option.textContent = p;
+                    select.appendChild(option);
+                });
+            });
+            renderRestrictions();
+        }
+
+        function addRestriction() {
+            const p1 = document.getElementById('res-p1').value;
+            const p2 = document.getElementById('res-p2').value;
+
+            if (!p1 || !p2 || p1 === p2) {
+                showNotification("Selecciona dos personas diferentes para la restricción.", 'error');
+                return;
+            }
+
+            const [minP, maxP] = p1 < p2 ? [p1, p2] : [p2, p1];
+
+            const exists = RESTRICCIONES_DATA.some(r =>
+                (r.p1 === minP && r.p2 === maxP)
+            );
+
+            if (!exists) {
+                RESTRICCIONES_DATA.push({ p1: minP, p2: maxP });
+                renderRestrictions();
+                showNotification(`Restricción: ${minP} y ${maxP} no estarán juntos.`, 'success');
+            } else {
+                showNotification("Esa restricción ya existe.", 'info');
+            }
+        }
+
+        function removeRestriction(p1, p2) {
+            const [minP, maxP] = p1 < p2 ? [p1, p2] : [p2, p1];
+
+            RESTRICCIONES_DATA = RESTRICCIONES_DATA.filter(r =>
+                !(r.p1 === minP && r.p2 === maxP)
+            );
+            renderRestrictions();
+            showNotification(`Restricción entre ${minP} y ${maxP} eliminada.`, 'info');
+        }
+
+        function renderRestrictions() {
+            const listDiv = document.getElementById('restriction-list');
+            listDiv.innerHTML = '';
+
+            if (RESTRICCIONES_DATA.length === 0) {
+                listDiv.innerHTML = '<p style="font-size: 0.9em; color: var(--sub-text-color);">No hay restricciones activas.</p>';
+                return;
+            }
+
+            RESTRICCIONES_DATA.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'flex-row';
+                div.style.justifyContent = 'space-between';
+                div.innerHTML = `
+                    <span>🛑 ${r.p1} y ${r.p2}</span>
+                    <button class="btn-danger btn-small" onclick="removeRestriction('${r.p1}', '${r.p2}')">X</button>
+                `;
+                listDiv.appendChild(div);
+            });
+        }
+
+        // --- 3. PERSISTENCIA Y GUARDADO LOCAL/ARCHIVO ---
+        function mapToObject(map) {
+            const obj = {};
+            map.forEach((value, key) => {
+                obj[key] = Array.from(value);
+            });
+            return obj;
+        }
+
+        function objectToMap(obj) {
+            const map = new Map();
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    map.set(key, new Set(obj[key]));
+                }
+            }
+            return map;
+        }
+
+        function getCurrentConfigurationObject() {
+            return {
+                grupos: GRUPOS_DATA,
+                restricciones: RESTRICCIONES_DATA,
+                slots: document.getElementById('slots').value,
+                headers: SLOT_HEADERS,
+                disponibilidad: mapToObject(disponibilidadGrupoMap),
+                opciones: {
+                    semanas: document.getElementById('semanas').value,
+                    startDate: document.getElementById('start-date').value,
+                    frequency: document.getElementById('frequency').value,
+                    priorityMode: document.getElementById('priority-mode').value,
+                    sameGroupOnly: document.getElementById('same-group-only').checked,
+                }
+            };
+        }
+
+        function applyConfiguration(config, sourceName = 'Configuración') {
+            try {
+                GRUPOS_DATA = config.grupos || [];
+                RESTRICCIONES_DATA = config.restricciones || [];
+                SLOT_HEADERS = config.headers || ["Visitador", "Acompañante 1", "Acompañante 2"];
+                disponibilidadGrupoMap = objectToMap(config.disponibilidad || {});
+
+                const opts = config.opciones || {};
+                document.getElementById('slots').value = config.slots || 3;
+                document.getElementById('semanas').value = opts.semanas || 12;
+                document.getElementById('start-date').value = opts.startDate || new Date().toISOString().substring(0, 10);
+                document.getElementById('frequency').value = opts.frequency || 7;
+                document.getElementById('priority-mode').value = opts.priorityMode || 'frecuencia';
+                document.getElementById('same-group-only').checked = opts.sameGroupOnly || false;
+
+                renderGroups();
+                renderRestrictions();
+                loadDisponibilidad();
+                getActiveParticipants();
+
+                showNotification(`${sourceName} cargada exitosamente.`, 'success');
+
+            } catch (e) {
+                showNotification(`Error al aplicar ${sourceName}. Los datos guardados podrían estar corruptos.`, 'error');
+                console.error(e);
+            }
+        }
+
+        // --- Preset LOCAL STORAGE Functions ---
+
+        function renderPresetsList() {
+            const listDiv = document.getElementById('presets-list');
+            listDiv.innerHTML = '';
+            const presets = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+
+            if (Object.keys(presets).length === 0) {
+                listDiv.innerHTML = '<li style="justify-content: center; color: var(--sub-text-color);">No hay presets guardados.</li>';
+                return;
+            }
+
+            for (const name in presets) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span style="flex-grow: 1;">${name}</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn-secondary btn-small" onclick="loadConfiguration('${name}')">Cargar</button>
+                        <button class="btn-danger btn-small" onclick="deleteConfiguration('${name}')">Eliminar</button>
+                    </div>
+                `;
+                listDiv.appendChild(li);
+            }
+        }
+
+        function saveConfiguration() {
+            const nameInput = document.getElementById('preset-name-input');
+            const name = name.value.trim();
+
+            if (!name) {
+                showNotification("Por favor, introduce un nombre para guardar el preset.", 'error');
+                return;
+            }
+
+            const config = getCurrentConfigurationObject();
+
+            const presets = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+            presets[name] = config;
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(presets));
+
+            nameInput.value = '';
+            renderPresetsList();
+            showNotification(`Configuración "${name}" guardada en el navegador.`, 'success');
+        }
+
+        function loadConfiguration(name) {
+            const presets = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+            const config = presets[name];
+
+            if (!config) {
+                showNotification(`No se encontró el preset "${name}".`, 'error');
+                return;
+            }
+            applyConfiguration(config, `Preset "${name}"`);
+        }
+
+        function deleteConfiguration(name) {
+            const presets = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
+            if (presets[name]) {
+                delete presets[name];
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(presets));
+                renderPresetsList();
+                showNotification(`Preset "${name}" eliminado.`, 'info');
+            }
+        }
+
+        // --- File I/O Functions ---
+
+        function downloadConfiguration() {
+            const config = getCurrentConfigurationObject();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "cuadrante_config_" + Date.now() + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            showNotification("Configuración descargada como archivo JSON.", 'success');
+        }
+
+        function uploadConfiguration(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                showNotification("No se seleccionó ningún archivo.", 'info');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const config = JSON.parse(e.target.result);
+                    applyConfiguration(config, `Archivo "${file.name}"`);
+                } catch (error) {
+                    showNotification(`Error: El archivo "${file.name}" no es un JSON de configuración válido.`, 'error');
+                    console.error("Error al parsear JSON:", error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 4. LÓGICA DE ASIGNACIÓN ---
+
+        function getNextGroupCandidates(slots) {
+            const allGroups = GRUPOS_DATA.map(g => g.id);
+            const availableGroups = allGroups.filter(groupId => {
+                const members = grupoVisitas.get(groupId)?.members || 0;
+                if (members === 0) return false;
+
+                for (let i = 1; i <= slots; i++) {
+                    if (disponibilidadGrupoMap.get(groupId)?.has(i) ?? true) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            availableGroups.sort((id1, id2) => {
+                const data1 = grupoVisitas.get(id1) || { count: 0, members: 1 };
+                const data2 = grupoVisitas.get(id2) || { count: 0, members: 1 };
+                const freq1 = data1.count / data1.members;
+                const freq2 = data2.count / data2.members;
+                return freq1 - freq2;
+            });
+
+            return availableGroups;
+        }
+
+        function asignarSlot(slot, personasAsignadasEstaSemana, grupoMiembros, priorityMode) {
+            let candidatos = grupoMiembros.filter(p =>
+                !personasAsignadasEstaSemana.has(p)
+            );
+
+            for (const p of personasAsignadasEstaSemana) {
+                RESTRICCIONES_DATA.forEach(r => {
+                    if (r.p1 === p) { candidatos = candidatos.filter(c => c !== r.p2); }
+                    if (r.p2 === p) { candidatos = candidatos.filter(c => c !== r.p1); }
+                });
+            }
+
+            candidatos.sort((p1, p2) => {
+                const visitas1 = contadorVisitas.get(p1) || 0;
+                const visitas2 = contadorVisitas.get(p2) || 0;
+                const tiempoSinIr1 = semanaActual - (ultimaVisita.get(p1) || -1);
+                const tiempoSinIr2 = semanaActual - (ultimaVisita.get(p2) || -1);
+
+                let p1Repeats = false;
+                let p2Repeats = false;
+
+                for (const pAsignado of personasAsignadasEstaSemana) {
+                    if (ultimaPareja.get(p1) === pAsignado) p1Repeats = true;
+                    if (ultimaPareja.get(p2) === pAsignado) p2Repeats = true;
+                }
+
+                if (priorityMode === 'pareja') {
+                    if (p1Repeats !== p2Repeats) {
+                        return p1Repeats ? 1 : -1;
+                    }
+                }
+
+                const diffVisitas = visitas1 - visitas2;
+                if (diffVisitas !== 0) return diffVisitas;
+
+                return tiempoSinIr2 - tiempoSinIr1;
+            });
+
+            const assignedPerson = candidatos[0];
+            if (assignedPerson) {
+                return { person: assignedPerson, groupId: PARTICIPANTES_MAP.get(assignedPerson).groupId };
+            } else {
+                return { person: 'VACÍO', groupId: 'empty' };
+            }
+        }
+
+        function generarCuadrante() {
+            inicializarDatos();
+
+            const semanasTotales = parseInt(document.getElementById('semanas').value);
+            const slots = parseInt(document.getElementById('slots').value);
+            const startDateStr = document.getElementById('start-date').value;
+            const frequency = parseInt(document.getElementById('frequency').value);
+            const priorityMode = document.getElementById('priority-mode').value;
+            const sameGroupOnly = document.getElementById('same-group-only').checked;
+
+            const startDate = new Date(startDateStr);
+            if (isNaN(startDate.getTime()) || isNaN(semanasTotales) || semanasTotales <= 0 || isNaN(slots) || slots <= 0 || PARTICIPANTES.length < slots) {
+                showNotification("Revisa la configuración: Fecha, filas, slots y asegúrate de tener más miembros que slots.", 'error');
+                return;
+            }
+
+            showNotification("Generando cuadrante...", 'info');
+
+            const cuadrante = [];
+            let conflictoDuplicidad = false;
+
+            for (let i = 0; i < semanasTotales; i++) {
+                semanaActual++;
+                const currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + (i * frequency));
+                const etiquetaTiempo = currentDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                const semanaSlots = [];
+                let personasAsignadasEstaSemana = new Set();
+                let personasAsignadasDuplicadas = new Set();
+                let currentAssignedGroup = null;
+
+                const allGroupCandidates = getNextGroupCandidates(slots);
+
+                if (allGroupCandidates.length === 0) {
+                    cuadrante.push({ etiquetaTiempo: etiquetaTiempo, slots: Array(slots).fill({ person: 'VACÍO', groupId: 'empty' }) });
+                    continue;
+                }
+
+                for (let slot = 1; slot <= slots; slot++) {
+
+                    let bestAssigned = { person: 'VACÍO', groupId: 'empty' };
+
+                    let candidateGroups = [];
+                    if (sameGroupOnly && currentAssignedGroup) {
+                        candidateGroups = [currentAssignedGroup];
+                    } else {
+                        candidateGroups = allGroupCandidates;
+                    }
+
+                    for (const groupId of candidateGroups) {
+
+                        if (!(disponibilidadGrupoMap.get(groupId)?.has(slot) ?? true)) {
+                            if (sameGroupOnly && currentAssignedGroup) {
+                                bestAssigned = { person: 'VACÍO', groupId: 'empty' };
+                                break;
+                            }
+                            continue;
+                        }
+
+                        const grupoMiembros = PARTICIPANTES.filter(p => PARTICIPANTES_MAP.get(p)?.groupId === groupId);
+                        const asignacion = asignarSlot(slot, personasAsignadasEstaSemana, grupoMiembros, priorityMode);
+
+                        if (asignacion.person !== 'VACÍO') {
+                            bestAssigned = { person: asignacion.person, groupId: asignacion.groupId };
+
+                            if (sameGroupOnly && !currentAssignedGroup) {
+                                currentAssignedGroup = groupId;
+                            }
+
+                            if (sameGroupOnly && currentAssignedGroup !== groupId) {
+                                continue;
+                            }
+                            break;
+                        }
+
+                        if (sameGroupOnly && currentAssignedGroup && groupId === currentAssignedGroup) {
+                            bestAssigned = { person: 'VACÍO', groupId: 'empty' };
+                            break;
+                        }
+                    }
+
+                    semanaSlots.push(bestAssigned);
+
+                    if (bestAssigned.person !== 'VACÍO') {
+
+                        if (personasAsignadasEstaSemana.has(bestAssigned.person)) {
+                            conflictoDuplicidad = true;
+                            personasAsignadasDuplicadas.add(bestAssigned.person);
+                        } else {
+                            personasAsignadasEstaSemana.add(bestAssigned.person);
+
+                            contadorVisitas.set(bestAssigned.person, (contadorVisitas.get(bestAssigned.person) || 0) + 1);
+                            ultimaVisita.set(bestAssigned.person, semanaActual);
+
+                            const currentGroupData = grupoVisitas.get(bestAssigned.groupId);
+                            if (currentGroupData) {
+                                grupoVisitas.set(bestAssigned.groupId, { ...currentGroupData, count: currentGroupData.count + 1 });
+                            }
+                        }
+                    }
+
+                    if (sameGroupOnly && bestAssigned.person === 'VACÍO') {
+                        for (let k = slot + 1; k <= slots; k++) { semanaSlots.push({ person: 'VACÍO', groupId: 'empty' }); }
+                        break;
+                    }
+                }
+
+                const asignados = [...personasAsignadasEstaSemana].filter(p => p !== 'VACÍO');
+                if (asignados.length > 1) {
+                    for (let i = 0; i < asignados.length; i++) {
+                        for (let j = i + 1; j < asignados.length; j++) {
+                            ultimaPareja.set(asignados[i], asignados[j]);
+                            ultimaPareja.set(asignados[j], asignados[i]);
+                        }
+                    }
+                }
+
+                cuadrante.push({ etiquetaTiempo: etiquetaTiempo, slots: semanaSlots, conflictos: [...personasAsignadasDuplicadas] });
+            }
+
+            ULTIMO_CUADRANTE_GENERADO = cuadrante;
+            mostrarResultados(cuadrante);
+
+            if (conflictoDuplicidad) {
+                showNotification("⚠️ **ERROR:** Se encontraron personas asignadas a dos o más slots en la misma semana (duplicidad). Los conflictos están marcados en **rojo**.", 'error');
+            } else {
+                showNotification("✅ Cuadrante generado con éxito.", 'success');
+            }
+        }
+
+        // --- 5. RENDERIZACIÓN DE RESULTADOS ---
+
+        function mostrarResultados(cuadrante) {
+            const resultadosDiv = document.getElementById('resultados');
+
+            let titleHTML = `<input type="text" id="cuadrante-title" value="Cuadrante Generado - ${new Date().toLocaleDateString('es-ES')}" style="width: 100%; font-size: 1.2em; font-weight: bold; margin-top: 20px; padding: 5px;">`;
+
+
+            // Contenedor con scroll horizontal
+            let tablaHTML = `<div id='cuadrante-table-container'><table><thead><tr><th>Fecha</th>`;
+            SLOT_HEADERS.forEach(header => {
+                tablaHTML += `<th>${header}</th>`;
+            });
+            tablaHTML += "</tr></thead><tbody>";
+
+            cuadrante.forEach(fila => {
+                tablaHTML += `<tr><td style="font-weight: bold;">${fila.etiquetaTiempo}</td>`;
+
+                fila.slots.forEach(slot => {
+                    let cellClass = "";
+                    const conflictosSet = new Set(fila.conflictos || []);
+
+                    // Se aplica la clase de conflicto si existe
+                    if (conflictosSet.has(slot.person)) {
+                        cellClass = "conflict_cell_colored";
+                    }
+
+                    tablaHTML += `<td class="${cellClass}">${slot.person}</td>`;
+                });
+                tablaHTML += "</tr>";
+            });
+
+            tablaHTML += "</tbody></table></div>";
+
+            let resumenHTML = "<div class='resumen' style='margin-top: 20px;'><h3>Resumen de Frecuencia (Visitas Totales)</h3><ul>";
+            const resumenVisitas = Array.from(contadorVisitas.entries())
+                .sort(([, v1], [, v2]) => v2 - v1);
+            resumenVisitas.forEach(([nombre, visitas]) => {
+                if (visitas > 0) resumenHTML += `<li><strong>${nombre}</strong>: ${visitas} visitas</li>`;
+            });
+            resumenHTML += "</ul></div>";
+
+            resultadosDiv.innerHTML = titleHTML + tablaHTML + resumenHTML;
+
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = () => {
+            const savedMode = localStorage.getItem('dark-mode') === 'true';
+            document.getElementById('dark-mode-toggle').checked = savedMode;
+            document.body.classList.toggle('dark-mode', savedMode);
+
+            renderGroups();
+            renderRestrictions();
+            renderPresetsList();
+
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('start-date').value = `${year}-${month}-${day}`;
+
+            loadDisponibilidad();
+            showNotification("Funcionalidad de coloreado eliminada. Tablas optimizadas para el desplazamiento horizontal.", 'success');
+        };
+    </script>
+
+</body>
+
+</html>
