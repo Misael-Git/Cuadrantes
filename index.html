@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Automático de Cuadrantes JS</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+        
+        /* Controles */
+        .controls { display: flex; justify-content: space-around; align-items: center; margin-bottom: 30px; padding: 15px; background-color: #ecf0f1; border-radius: 8px; }
+        .control-group { display: flex; align-items: center; }
+        label { margin-right: 10px; font-weight: bold; }
+        input[type="number"], button { padding: 10px 15px; border-radius: 5px; border: 1px solid #bdc3c7; font-size: 1em; }
+        button { background-color: #3498db; color: white; cursor: pointer; border: none; transition: background-color 0.3s; }
+        button:hover { background-color: #2980b9; }
+        
+        /* Tabla de Resultados */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; transition: background-color 0.2s; }
+        th { background-color: #34495e; color: white; }
+        
+        /* Estilos condicionales por género */
+        .Hombres { background-color: #e6f7ff; } /* Azul claro */
+        .Mujeres { background-color: #fff0f5; } /* Rosa claro */
+
+        /* Resumen */
+        .resumen { margin-top: 30px; padding: 15px; background-color: #f9f9f9; border-left: 5px solid #3498db; }
+        .resumen h3 { margin-top: 0; color: #3498db; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Generador de Cuadrantes de Visitas</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="semanas">Semanas a Generar:</label>
+                <input type="number" id="semanas" value="24" min="1">
+            </div>
+            <button onclick="generarCuadrante()">Generar Cuadrante</button>
+        </div>
+
+        <div id="resultados">
+            </div>
+
+    </div>
+
+    <script>
+        // --- 1. DEFINICIÓN DE DATOS Y REGLAS ---
+        const HOMBRES = ["Javier", "José Miguel", "Misael", "Antonio", "Jetro", "Mario"];
+        const MUJERES = ["Antonia", "Fe", "Lucía", "Ana Mari", "M.J. Pruaño", "M.J. Vega", "Meli", "Mercedes", "Neysa"];
+        const PARTICIPANTES = [...HOMBRES, ...MUJERES];
+        
+        // Variables de estado global
+        let contadorVisitas = new Map();
+        let ultimaVisita = new Map();
+        let ultimaPareja = new Map();
+        let semanaActual = 0;
+
+        /** Inicializa o resetea el estado del generador. */
+        function inicializarDatos() {
+            contadorVisitas.clear();
+            ultimaVisita.clear();
+            ultimaPareja.clear();
+            semanaActual = 0;
+
+            PARTICIPANTES.forEach(p => {
+                contadorVisitas.set(p, 0);
+                ultimaVisita.set(p, -1);
+            });
+
+            // --- CARGA DE HISTORIAL (Modifica si necesitas empezar desde un estado específico) ---
+            // Si quieres que alguien descanse al principio, dale más visitas aquí:
+            // contadorVisitas.set("Mario", 4); 
+            // contadorVisitas.set("Misael", 3);
+            // semanaActual = 50; // Inicia la cuenta de semanas desde 50
+        }
+
+        /** Elige al visitador basándose en menos visitas y mayor tiempo sin ir. */
+        function elegirVisitador(grupo) {
+            let mejorCandidato = null;
+            let minVisitas = Infinity;
+            let maxTiempoSinIr = -1;
+
+            for (const p of grupo) {
+                const visitas = contadorVisitas.get(p);
+                const tiempoSinIr = semanaActual - ultimaVisita.get(p);
+
+                if (visitas < minVisitas) {
+                    minVisitas = visitas;
+                    maxTiempoSinIr = tiempoSinIr;
+                    mejorCandidato = p;
+                } else if (visitas === minVisitas) {
+                    if (tiempoSinIr > maxTiempoSinIr) {
+                        maxTiempoSinIr = tiempoSinIr;
+                        mejorCandidato = p;
+                    }
+                    // Desempate aleatorio si las condiciones son idénticas
+                    else if (tiempoSinIr === maxTiempoSinIr && Math.random() > 0.5) {
+                        mejorCandidato = p;
+                    }
+                }
+            }
+            return mejorCandidato;
+        }
+
+        /** Elige al acompañante aplicando restricciones (Mario/Misael y repetición). */
+        function elegirAcompañante(visitador, grupo) {
+            let candidatos = [...grupo].filter(p => p !== visitador); // No puede ir consigo mismo
+
+            // --- Regla: Mario y Misael no pueden estar juntos ---
+            if (visitador === "Mario") {
+                candidatos = candidatos.filter(c => c !== "Misael");
+            } else if (visitador === "Misael") {
+                candidatos = candidatos.filter(c => c !== "Mario");
+            }
+
+            // Ordenar: 1. Menos repetición de pareja. 2. Menos visitas. 3. Mayor tiempo sin ir.
+            candidatos.sort((c1, c2) => {
+                const c1RepitePareja = ultimaPareja.get(c1) === visitador;
+                const c2RepitePareja = ultimaPareja.get(c2) === visitador;
+
+                // Prioridad 1: Evitar repetición de pareja
+                if (c1RepitePareja !== c2RepitePareja) {
+                    return c1RepitePareja ? 1 : -1;
+                }
+
+                // Prioridad 2: Menos visitas totales
+                const diffVisitas = contadorVisitas.get(c1) - contadorVisitas.get(c2);
+                if (diffVisitas !== 0) return diffVisitas;
+
+                // Prioridad 3: Mayor tiempo sin ir
+                return ultimaVisita.get(c2) - ultimaVisita.get(c1);
+            });
+
+            // Selecciona el primer candidato (el mejor)
+            return candidatos[0];
+        }
+
+        /** Actualiza los contadores de visitas y el historial de parejas. */
+        function actualizarCuadrante(visitador, acompañante) {
+            contadorVisitas.set(visitador, contadorVisitas.get(visitador) + 1);
+            contadorVisitas.set(acompañante, contadorVisitas.get(acompañante) + 1);
+            
+            ultimaVisita.set(visitador, semanaActual);
+            ultimaVisita.set(acompañante, semanaActual);
+
+            ultimaPareja.set(visitador, acompañante);
+            ultimaPareja.set(acompañante, visitador);
+        }
+
+        // --- 2. LÓGICA DE GENERACIÓN Y SALIDA ---
+
+        function generarCuadrante() {
+            inicializarDatos();
+            const semanasAGenerar = parseInt(document.getElementById('semanas').value);
+            if (isNaN(semanasAGenerar) || semanasAGenerar <= 0) return;
+
+            const cuadrante = [];
+            let contadorHombres = 0;
+            let contadorMujeres = 0;
+
+            for (let i = 0; i < semanasAGenerar; i++) {
+                semanaActual++;
+                
+                let grupo;
+                let genero;
+                
+                // Proporcionalidad 3 Mujeres por cada 2 Hombres
+                if (contadorHombres * 3 <= contadorMujeres * 2) {
+                    grupo = HOMBRES;
+                    contadorHombres++;
+                    genero = "Hombres";
+                } else {
+                    grupo = MUJERES;
+                    contadorMujeres++;
+                    genero = "Mujeres";
+                }
+                
+                const visitador = elegirVisitador(grupo);
+                const acompañante = elegirAcompañante(visitador, grupo);
+                
+                actualizarCuadrante(visitador, acompañante);
+                
+                cuadrante.push({ semana: semanaActual, visitador, acompañante, genero });
+            }
+
+            mostrarResultados(cuadrante);
+        }
+
+        /** Renderiza la tabla y el resumen en el HTML. */
+        function mostrarResultados(cuadrante) {
+            const resultadosDiv = document.getElementById('resultados');
+            
+            // --- Construcción de la Tabla ---
+            let tablaHTML = "<table><thead><tr><th>Semana</th><th>Visitador (H/A)</th><th>Acompañante (C/A)</th></tr></thead><tbody>";
+            cuadrante.forEach(fila => {
+                tablaHTML += `<tr class="${fila.genero}"><td>${fila.semana}</td><td>${fila.visitador}</td><td>${fila.acompañante}</td></tr>`;
+            });
+            tablaHTML += "</tbody></table>";
+
+            // --- Construcción del Resumen ---
+            let resumenHTML = "<div class='resumen'><h3>Resumen de Frecuencia</h3>";
+            
+            const resumenVisitas = Array.from(contadorVisitas.entries())
+                .sort(([, v1], [, v2]) => v2 - v1); // Ordenar por visitas descendente
+
+            resumenHTML += "<ul>";
+            resumenVisitas.forEach(([nombre, visitas]) => {
+                if (visitas > 0) {
+                    resumenHTML += `<li><strong>${nombre}</strong>: ${visitas} visitas</li>`;
+                }
+            });
+            resumenHTML += "</ul></div>";
+
+            resultadosDiv.innerHTML = tablaHTML + resumenHTML;
+        }
+
+        // Inicializar datos al cargar la página por primera vez
+        inicializarDatos();
+    </script>
+
+</body>
+</html>
