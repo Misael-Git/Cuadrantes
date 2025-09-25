@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Dinámico de Cuadrantes</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #1e88e5;
+            border-bottom: 3px solid #1e88e5;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Controles y Grupos */
+        .config-area {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .controls,
+        .group-management {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #bbdefb;
+        }
+
+        .group-list {
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .group-card {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Colores Base para Grupos (se ajustan al generar) */
+        .group-hombres {
+            background-color: #d1e7ff;
+            border-left: 5px solid #007bff;
+        }
+
+        .group-mujeres {
+            background-color: #ffe8d1;
+            border-left: 5px solid #ff7f00;
+        }
+
+        .group-other {
+            background-color: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+
+        .group-card textarea {
+            width: 95%;
+            height: 60px;
+            margin-top: 5px;
+            padding: 5px;
+            border-radius: 3px;
+            resize: vertical;
+        }
+
+        .group-card button {
+            margin-left: 10px;
+        }
+
+        /* Botones y Entradas */
+        input[type="number"],
+        button,
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            margin-right: 5px;
+        }
+
+        .btn-primary {
+            background-color: #1e88e5;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #1565c0;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        .btn-secondary {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        /* Tabla de Resultados */
+        #cuadrante-table-container {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #34495e;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        /* Estilos condicionales por género en la tabla */
+        .Hombres_cell {
+            background-color: #d1e7ff;
+        }
+
+        .Mujeres_cell {
+            background-color: #ffe8d1;
+        }
+
+        .Otros_cell {
+            background-color: #d4edda;
+        }
+
+        /* Resumen */
+        .resumen {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 5px solid #1e88e5;
+        }
+
+        .resumen h3 {
+            margin-top: 0;
+            color: #1e88e5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Generador Dinámico de Cuadrantes de Visitas</h1>
+
+        <div class="config-area">
+
+            <div class="group-management">
+                <h2>Administración de Grupos</h2>
+                <div id="group-list" class="group-list">
+                </div>
+                <div style="margin-top: 15px;">
+                    <input type="text" id="new-group-name" placeholder="Nombre del nuevo grupo">
+                    <button class="btn-secondary" onclick="addGroup()">+ Añadir Grupo</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h2>Configuración</h2>
+                <div style="margin-bottom: 15px;">
+                    <label for="semanas">Semanas Totales (Filas):</label>
+                    <input type="number" id="semanas" value="24" min="1" style="width: 80px;">
+                </div>
+                <div style="margin-bottom: 25px;">
+                    <label for="columnas">Semanas por Columna:</label>
+                    <input type="number" id="columnas" value="4" min="1" style="width: 80px;">
+                    <p style="font-size: 0.8em; color: #666;">(Múltiplos de esta semana irán en la misma columna)</p>
+                </div>
+                <button class="btn-primary" style="width: 100%;" onclick="generarCuadrante()">Generar Cuadrante</button>
+            </div>
+
+        </div>
+
+        <div id="resultados">
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. DATOS INICIALES Y ESTRUCTURAS ---
+        let GRUPOS_DATA = [
+            { id: 'hombres', name: 'Hombres', members: "Javier, José Miguel, Misael, Antonio, Jetro, Mario", colorClass: 'group-hombres' },
+            { id: 'mujeres', name: 'Mujeres', members: "Antonia, Fe, Lucía, Ana Mari, M.J. Pruaño, M.J. Vega, Meli, Mercedes, Neysa", colorClass: 'group-mujeres' }
+        ];
+
+        // Variables de estado dinámicas
+        let PARTICIPANTES = [];
+        let contadorVisitas = new Map();
+        let ultimaVisita = new Map();
+        let ultimaPareja = new Map();
+        let semanaActual = 0;
+        const RESTRICCIONES = {
+            "Mario": "Misael",
+            "Misael": "Mario"
+        };
+        const random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+
+        // --- 2. GESTIÓN DE INTERFAZ (DOM) ---
+
+        /** Renderiza el panel de gestión de grupos. */
+        function renderGroups() {
+            const listDiv = document.getElementById('group-list');
+            listDiv.innerHTML = '';
+
+            GRUPOS_DATA.forEach((group, index) => {
+                const card = document.createElement('div');
+                card.className = `group-card ${group.colorClass}`;
+                card.id = `group-card-${group.id}`;
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <input type="text" value="${group.name}" onchange="renameGroup('${group.id}', this.value)" style="font-weight:bold; border:none; background:transparent;">
+                        <button class="btn-danger" onclick="removeGroup('${group.id}')">Eliminar</button>
+                    </div>
+                    <label style="font-size: 0.9em; display:block; margin-top: 5px;">Miembros (separados por coma):</label>
+                    <textarea id="members-${group.id}" onchange="updateGroupMembers('${group.id}', this.value)">${group.members}</textarea>
+                `;
+                listDiv.appendChild(card);
+            });
+        }
+
+        /** Añade un nuevo grupo con un nombre por defecto y un color genérico. */
+        function addGroup() {
+            const newNameInput = document.getElementById('new-group-name');
+            const name = newNameInput.value.trim() || 'Grupo Nuevo';
+            newNameInput.value = '';
+
+            const newId = `group_${Date.now()}`;
+            GRUPOS_DATA.push({
+                id: newId,
+                name: name,
+                members: '',
+                colorClass: 'group-other' // Color por defecto
+            });
+            renderGroups();
+        }
+
+        /** Renombra un grupo. */
+        function renameGroup(id, newName) {
+            const group = GRUPOS_DATA.find(g => g.id === id);
+            if (group) group.name = newName.trim();
+        }
+
+        /** Actualiza los miembros de un grupo. */
+        function updateGroupMembers(id, membersText) {
+            const group = GRUPOS_DATA.find(g => g.id === id);
+            if (group) group.members = membersText;
+        }
+
+        /** Elimina un grupo. */
+        function removeGroup(id) {
+            if (GRUPOS_DATA.length <= 1) {
+                alert("Debe haber al menos un grupo de participantes.");
+                return;
+            }
+            GRUPOS_DATA = GRUPOS_DATA.filter(g => g.id !== id);
+            renderGroups();
+        }
+
+        // --- 3. LÓGICA DEL CUADRANTE (Adaptada para grupos dinámicos) ---
+
+        /** Prepara las estructuras de datos antes de generar el cuadrante. */
+        function inicializarDatos() {
+            PARTICIPANTES = [];
+            contadorVisitas.clear();
+            ultimaVisita.clear();
+            ultimaPareja.clear();
+            semanaActual = 0;
+
+            GRUPOS_DATA.forEach(group => {
+                const members = group.members.split(',').map(m => m.trim()).filter(m => m.length > 0);
+                members.forEach(p => {
+                    PARTICIPANTES.push(p);
+                    contadorVisitas.set(p, 0);
+                    ultimaVisita.set(p, -1);
+                });
+            });
+        }
+
+        /** Elige al visitador que tenga el menor número de visitas O el mayor tiempo sin ir. */
+        function elegirVisitador(grupoMiembros) {
+            let mejorCandidato = null;
+            let minVisitas = Infinity;
+            let maxTiempoSinIr = -1;
+
+            for (const p of grupoMiembros) {
+                const visitas = contadorVisitas.get(p) || 0; // Usar 0 si es un nuevo miembro no inicializado (seguridad)
+                const tiempoSinIr = semanaActual - (ultimaVisita.get(p) || -1);
+
+                if (visitas < minVisitas) {
+                    minVisitas = visitas;
+                    maxTiempoSinIr = tiempoSinIr;
+                    mejorCandidato = p;
+                } else if (visitas === minVisitas) {
+                    if (tiempoSinIr > maxTiempoSinIr) {
+                        maxTiempoSinIr = tiempoSinIr;
+                        mejorCandidato = p;
+                    }
+                    else if (tiempoSinIr === maxTiempoSinIr && Math.random() > 0.5) {
+                        mejorCandidato = p;
+                    }
+                }
+            }
+            return mejorCandidato;
+        }
+
+        /** Elige al acompañante aplicando restricciones (Mario/Misael y repetición). */
+        function elegirAcompañante(visitador, grupoMiembros) {
+            let candidatos = [...grupoMiembros].filter(p => p !== visitador);
+
+            // Aplicar Restricciones Duras (ej. Mario y Misael)
+            const restriccion = RESTRICCIONES[visitador];
+            if (restriccion) {
+                candidatos = candidatos.filter(c => c !== restriccion);
+            }
+
+            // Ordenar: 1. Menos repetición de pareja. 2. Menos visitas. 3. Mayor tiempo sin ir.
+            candidatos.sort((c1, c2) => {
+                const c1RepitePareja = ultimaPareja.get(c1) === visitador;
+                const c2RepitePareja = ultimaPareja.get(c2) === visitador;
+
+                if (c1RepitePareja !== c2RepitePareja) {
+                    return c1RepitePareja ? 1 : -1;
+                }
+
+                const diffVisitas = (contadorVisitas.get(c1) || 0) - (contadorVisitas.get(c2) || 0);
+                if (diffVisitas !== 0) return diffVisitas;
+
+                return (ultimaVisita.get(c2) || -1) - (ultimaVisita.get(c1) || -1);
+            });
+
+            // Si hay candidatos, devolver el mejor; si no hay (ej. un grupo de 1 persona), puede devolver null o el visitador (depende de si quieres que falten)
+            return candidatos.length > 0 ? candidatos[0] : null;
+        }
+
+        /** Actualiza los contadores de visitas y el historial de parejas. */
+        function actualizarCuadrante(visitador, acompañante) {
+            if (acompañante) {
+                contadorVisitas.set(visitador, (contadorVisitas.get(visitador) || 0) + 1);
+                contadorVisitas.set(acompañante, (contadorVisitas.get(acompañante) || 0) + 1);
+
+                ultimaVisita.set(visitador, semanaActual);
+                ultimaVisita.set(acompañante, semanaActual);
+
+                ultimaPareja.set(visitador, acompañante);
+                ultimaPareja.set(acompañante, visitador);
+            }
+        }
+
+        /** Función principal para generar el cuadrante. */
+        function generarCuadrante() {
+            inicializarDatos();
+            const semanasAGenerar = parseInt(document.getElementById('semanas').value);
+            const columnasPorSemana = parseInt(document.getElementById('columnas').value);
+
+            if (isNaN(semanasAGenerar) || semanasAGenerar <= 0 || isNaN(columnasPorSemana) || columnasPorSemana <= 0) {
+                alert("Por favor, introduce un número válido de semanas y columnas.");
+                return;
+            }
+
+            const cuadrante = [];
+            const grupoMiembros = {}; // Mapear ID del grupo a lista de miembros
+            const grupoFrecuencia = {}; // Contador para la proporcionalidad
+
+            GRUPOS_DATA.forEach(group => {
+                grupoMiembros[group.id] = group.members.split(',').map(m => m.trim()).filter(m => m.length > 0);
+                grupoFrecuencia[group.id] = 0;
+            });
+
+            // Lógica de Proporcionalidad (Elige el grupo con menor frecuencia relativa)
+            const getNextGroupId = () => {
+                const totalFrecuencia = Object.values(grupoFrecuencia).reduce((a, b) => a + b, 0);
+                let bestGroupId = null;
+                let minRelativeFreq = Infinity;
+
+                GRUPOS_DATA.forEach(group => {
+                    const numMembers = grupoMiembros[group.id].length;
+                    if (numMembers === 0) return;
+
+                    const currentFreq = grupoFrecuencia[group.id];
+                    // Frecuencia relativa: Frecuencia actual / Número de miembros (para equilibrar)
+                    const relativeFreq = currentFreq / numMembers;
+
+                    if (relativeFreq < minRelativeFreq) {
+                        minRelativeFreq = relativeFreq;
+                        bestGroupId = group.id;
+                    }
+                });
+                return bestGroupId;
+            };
+
+            for (let i = 0; i < semanasAGenerar; i++) {
+                semanaActual++;
+
+                const groupId = getNextGroupId();
+                if (!groupId) break;
+
+                const grupo = grupoMiembros[groupId];
+                grupoFrecuencia[groupId]++;
+
+                const visitador = elegirVisitador(grupo);
+                const acompañante = elegirAcompañante(visitador, grupo);
+                const groupName = GRUPOS_DATA.find(g => g.id === groupId).name;
+
+                actualizarCuadrante(visitador, acompañante);
+
+                cuadrante.push({
+                    semana: semanaActual,
+                    visitador: visitador || '---',
+                    acompañante: acompañante || '---',
+                    groupName: groupName
+                });
+            }
+
+            mostrarResultados(cuadrante, columnasPorSemana);
+        }
+
+        // --- 4. RENDERIZACIÓN DE RESULTADOS ---
+
+        /** Renderiza la tabla con múltiples columnas y el resumen. */
+        function mostrarResultados(cuadrante, columnasPorSemana) {
+            const resultadosDiv = document.getElementById('resultados');
+
+            // --- Resumen de Frecuencia ---
+            let resumenHTML = "<div class='resumen'><h3>Resumen de Frecuencia (Visitas Totales)</h3><ul>";
+            const resumenVisitas = Array.from(contadorVisitas.entries())
+                .sort(([, v1], [, v2]) => v2 - v1);
+            resumenVisitas.forEach(([nombre, visitas]) => {
+                if (visitas > 0) resumenHTML += `<li><strong>${nombre}</strong>: ${visitas} visitas</li>`;
+            });
+            resumenHTML += "</ul></div>";
+
+            // --- Construcción de la Tabla de N Columnas ---
+            let tablaHTML = "<div id='cuadrante-table-container'><table><thead><tr>";
+            const numSemanas = cuadrante.length;
+            const numColumnas = Math.ceil(numSemanas / columnasPorSemana);
+
+            // Encabezados de la tabla
+            for (let c = 0; c < numColumnas; c++) {
+                tablaHTML += `<th colspan="3" style="background-color: #5d6d7e;">COLUMNA ${c + 1}</th>`;
+            }
+            tablaHTML += "</tr><tr>";
+            for (let c = 0; c < numColumnas; c++) {
+                tablaHTML += "<th>Semana</th><th>Visitador</th><th>Acompañante</th>";
+            }
+            tablaHTML += "</tr></thead><tbody>";
+
+            // Filas de la tabla (rotación)
+            for (let r = 0; r < columnasPorSemana; r++) {
+                tablaHTML += "<tr>";
+                for (let c = 0; c < numColumnas; c++) {
+                    const index = r + c * columnasPorSemana;
+                    if (index < numSemanas) {
+                        const fila = cuadrante[index];
+                        const cellClass = fila.groupName.replace(/\s/g, '_') + '_cell';
+                        tablaHTML += `<td class="${cellClass}">${fila.semana}</td><td class="${cellClass}">${fila.visitador}</td><td class="${cellClass}">${fila.acompañante}</td>`;
+                    } else {
+                        tablaHTML += "<td colspan='3' style='background-color:#f0f0f0;'>&nbsp;</td>"; // Celdas vacías de relleno
+                    }
+                }
+                tablaHTML += "</tr>";
+            }
+
+            tablaHTML += "</tbody></table></div>";
+
+            resultadosDiv.innerHTML = resumenHTML + tablaHTML;
+        }
+
+        // --- INICIALIZACIÓN ---
+        window.onload = renderGroups;
+    </script>
+
+</body>
+
+</html>
